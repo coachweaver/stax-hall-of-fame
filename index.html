@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>$tax Hall of Fame</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+    <style>
+      :root {
+        --olive: #3b4d36;
+        --olive-dark: #232e1f;
+        --cream: #f4f1ea;
+        --gold: #d4af37;
+        --gold-dark: #a88a2c;
+      }
+
+      body {
+        background-color: var(--cream);
+        background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d4af37' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        padding: 40px 20px;
+        font-family: 'Montserrat', sans-serif;
+        color: var(--olive-dark);
+      }
+
+      h1 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 900;
+        font-size: 3.5rem;
+        color: var(--olive-dark);
+        letter-spacing: 4px;
+        text-shadow: 3px 3px 0px var(--gold);
+        position: relative;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+      }
+
+      h1::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150px;
+        height: 3px;
+        background-color: var(--olive-dark);
+        box-shadow: 2px 2px 0px var(--gold);
+      }
+
+      .last-updated-text {
+        font-size: 0.8rem;
+        color: var(--olive-dark);
+        opacity: 0.6;
+        text-align: center;
+        font-weight: 600;
+        margin-bottom: 30px;
+      }
+
+      .vintage-card {
+        background-color: var(--olive);
+        color: var(--cream);
+        border: 2px solid var(--gold);
+        border-radius: 4px;
+        box-shadow: 8px 8px 0px var(--gold-dark);
+        position: relative;
+      }
+
+      .stat-box {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(212, 175, 55, 0.3);
+        border-radius: 4px;
+        padding: 15px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .custom-input {
+        background-color: var(--cream);
+        border: 2px solid var(--gold);
+        color: var(--olive-dark);
+        font-weight: 600;
+        border-radius: 0;
+        box-shadow: inset 2px 2px 5px rgba(0,0,0,0.1);
+      }
+      .custom-input:focus {
+        border-color: var(--gold-dark);
+        box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+        outline: none;
+      }
+
+      .btn-vintage {
+        color: var(--gold);
+        border-color: var(--gold);
+        background-color: transparent;
+        transition: all 0.2s;
+      }
+      .btn-vintage:hover, .btn-vintage.active, .btn-check:checked + .btn-vintage {
+        background-color: var(--gold);
+        color: var(--olive-dark);
+        border-color: var(--gold-dark);
+      }
+
+      .table { color: var(--cream); margin-bottom: 0; }
+      .table th {
+        background-color: var(--olive-dark);
+        color: var(--gold);
+        border-bottom: 3px solid var(--gold);
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 15px;
+      }
+
+      .tooltip-header {
+        border-bottom: 2px dotted rgba(212, 175, 55, 0.9);
+        cursor: help;
+        display: inline-block;
+      }
+
+      .table td {
+        border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+        vertical-align: middle;
+        padding: 15px;
+        color: var(--cream);
+      }
+
+      .table-hover tbody tr:nth-of-type(odd) td  { background-color: rgba(212, 175, 55, 0.04); }
+      .table-hover tbody tr:nth-of-type(even) td { background-color: transparent; }
+
+      .table-hover tbody tr { transition: all 0.2s ease; cursor: pointer; }
+      .table-hover tbody tr:hover td {
+        background-color: var(--olive-dark) !important;
+        transform: scale(1.01);
+        color: var(--gold);
+      }
+
+      .rank-col { font-family: 'Playfair Display', serif; font-weight: 900; font-size: 1.3rem; color: var(--gold); text-align: center; }
+      .currency { font-family: monospace; font-size: 1.2em; color: var(--gold); text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+
+      .badge {
+        font-weight: 600;
+        box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+        border-radius: 2px;
+        padding: 5px 10px;
+        color: var(--olive-dark);
+        border: 1px solid;
+      }
+
+      .asset-stocks  { background-color: var(--gold);  border-color: var(--gold-dark); }
+      .asset-index   { background-color: #ebd186;      border-color: #cbb36b; }
+      .asset-savings { background-color: #9ab0a6;      border-color: #7d9389; }
+      .asset-cd      { background-color: #c7a785;      border-color: #a88a68; }
+      .asset-bonds   { background-color: #8fa1ac;      border-color: #72848f; }
+      .asset-crop    { background-color: #cc8b76;      border-color: #ab6d59; }
+      .asset-gold    { background-color: #f2c75c;      border-color: #d1a843; }
+      .asset-na      { background-color: var(--cream); border-color: #ccc; }
+
+      .footer-note {
+        color: var(--olive-dark);
+        font-size: 0.85rem;
+        font-weight: 600;
+        opacity: 0.75;
+        background-color: rgba(212, 175, 55, 0.15);
+        padding: 10px 20px;
+        border-radius: 6px;
+        display: inline-block;
+        border: 1px solid rgba(212, 175, 55, 0.3);
+      }
+
+      .modal-content {
+        background-color: var(--cream);
+        border: 4px solid var(--olive-dark);
+        border-radius: 0;
+        box-shadow: 10px 10px 0px var(--gold-dark);
+      }
+      .modal-header {
+        background-color: var(--olive-dark);
+        color: var(--gold);
+        border-bottom: 2px solid var(--gold);
+        font-family: 'Playfair Display', serif;
+        border-radius: 0;
+      }
+      .modal-body {
+        color: var(--olive-dark);
+        font-family: 'Montserrat', sans-serif;
+      }
+      .detail-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(35, 46, 31, 0.6);
+        font-weight: 700;
+        margin-bottom: 2px;
+      }
+      .detail-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: var(--olive-dark);
+      }
+
+      @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      .animated-row { opacity: 0; animation: fadeUp 0.6s ease forwards; }
+
+      .game-stat { font-size: 3rem; font-family: 'Playfair Display', serif; color: var(--gold); text-shadow: 2px 2px 3px rgba(0,0,0,0.5); }
+      .overall-list { font-size: 1.15rem; text-align: left; margin: 0 auto; width: fit-content; font-weight: 600; }
+      .overall-list div { padding: 4px 0; }
+
+      @keyframes pulseWin {
+        0%   { color: #f2c75c; text-shadow: 0 0 8px rgba(46, 204, 113, 0.8);  transform: scale(1); }
+        50%  { color: #2ecc71; text-shadow: 0 0 15px rgba(242, 199, 92, 1);   transform: scale(1.05); }
+        100% { color: #f2c75c; text-shadow: 0 0 8px rgba(46, 204, 113, 0.8);  transform: scale(1); }
+      }
+      .win-rate-pulse {
+        animation: pulseWin 1.5s infinite;
+        display: inline-block;
+        font-weight: 900;
+      }
+
+      /* High Contrast Modal Table Overrides */
+      .modal-body .table td {
+        color: var(--olive-dark) !important;
+        border-bottom: 1px solid rgba(35, 46, 31, 0.15) !important;
+      }
+      .modal-body .table-hover tbody tr:hover td {
+        background-color: rgba(212, 175, 55, 0.15) !important;
+        color: var(--olive-dark) !important;
+      }
+      .modal-body .currency {
+        color: var(--olive-dark) !important;
+        text-shadow: none !important;
+      }
+      .list-player-text {
+        color: var(--olive-dark) !important;
+        text-shadow: none !important;
+      }
+      .computer-row td {
+        background-color: rgba(212, 175, 55, 0.3) !important;
+        color: var(--olive-dark) !important;
+      }
+
+      /* --- Custom Modal Animations --- */
+      .modal.modal-flip .modal-dialog          { transform: perspective(500px) rotateX(-60deg); opacity: 0; transition: all 0.4s ease; }
+      .modal.show.modal-flip .modal-dialog     { transform: perspective(500px) rotateX(0deg);  opacity: 1; }
+
+      .modal.modal-zoom .modal-dialog          { transform: scale(0.6); opacity: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+      .modal.show.modal-zoom .modal-dialog     { transform: scale(1);   opacity: 1; }
+
+      .modal.modal-slide-right .modal-dialog   { transform: translateX(100px); opacity: 0; transition: all 0.3s ease; }
+      .modal.show.modal-slide-right .modal-dialog { transform: translateX(0); opacity: 1; }
+
+      /* Chart containers */
+      .chart-card {
+        background-color: var(--olive);
+        border: 2px solid var(--gold);
+        border-radius: 4px;
+        box-shadow: 8px 8px 0px var(--gold-dark);
+        padding: 24px;
+        margin-bottom: 28px;
+      }
+      .chart-title {
+        font-family: 'Playfair Display', serif;
+        color: var(--gold);
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+        margin-bottom: 16px;
+      }
+      .chart-empty {
+        color: rgba(244, 241, 234, 0.45);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: center;
+        padding: 30px 0;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+
+      <h1 class="text-center">$tax Hall of Fame</h1>
+      <div id="lastUpdated" class="last-updated-text"></div>
+
+      <!-- Navigation Tabs -->
+      <div class="d-flex flex-wrap justify-content-center gap-3 mb-4" id="navTabs" style="display: none !important;">
+        <button class="btn btn-vintage active fw-bold px-4" id="tabIndiv" onclick="switchTab('indiv')">🧑‍💼 Investors</button>
+        <button class="btn btn-vintage fw-bold px-4"        id="tabGame"  onclick="switchTab('game')">📊 Game Analytics</button>
+        <button class="btn btn-vintage fw-bold px-4"        id="tabTeam"  onclick="switchTab('team')">🤝 Team Scores</button>
+      </div>
+
+      <!-- Loading / Error -->
+      <div id="statusMessage" class="text-center mb-4">
+        <div class="spinner-border" style="color: var(--gold);" role="status"></div>
+        <p class="mt-3 fw-bold" style="color: var(--olive-dark); font-size: 1.1rem;">Never tell Ms. Robinson's class the secret ingredient...</p>
+      </div>
+
+      <!-- ===================== INVESTORS TAB ===================== -->
+      <div id="indivView" style="display: none;">
+
+        <div class="vintage-card p-4 mb-4">
+          <div class="row align-items-center justify-content-center mb-4">
+            <div class="col-md-5 mb-3 mb-md-0 text-center">
+              <label for="classFilter" class="form-label fw-bold text-uppercase" style="color: var(--cream);">Select Ledger Period</label>
+              <select id="classFilter" class="form-select custom-input text-center" onchange="updateLeaderboard()"></select>
+            </div>
+            <div class="col-md-5 text-center">
+              <label for="searchInput" class="form-label fw-bold text-uppercase" style="color: var(--cream);">Search Investor</label>
+              <input type="text" id="searchInput" class="form-control custom-input text-center" placeholder="Search by name..." onkeyup="updateLeaderboard()">
+            </div>
+          </div>
+
+          <div class="row text-center px-2">
+            <div class="col-md-4 mb-2 mb-md-0">
+              <div class="stat-box">
+                <span style="color: var(--gold); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Class Avg Portfolio</span>
+                <span id="statAvgVal" class="fs-4 fw-bold currency">--</span>
+              </div>
+            </div>
+            <div class="col-md-4 mb-2 mb-md-0">
+              <div class="stat-box">
+                <span style="color: var(--gold); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Most Common Highest Asset</span>
+                <span id="statTopHigh" class="fs-5 fw-bold text-uppercase mt-1">--</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="stat-box">
+                <span style="color: var(--gold); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Most Common Lowest Asset</span>
+                <span id="statTopLow" class="fs-5 fw-bold text-uppercase mt-1">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end mb-3 px-1">
+          <div>
+            <h5 class="mb-2 text-uppercase fw-bold" style="color: var(--olive-dark); font-family: 'Playfair Display', serif;">Leaderboard</h5>
+            <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+              <div class="btn-group shadow-sm" role="group">
+                <input type="radio" class="btn-check" name="sortToggle" id="sortNetWorth" autocomplete="off" checked onchange="setSortMode('networth')">
+                <label class="btn btn-sm btn-vintage fw-bold px-3" for="sortNetWorth">Sort by: Portfolio Value</label>
+
+                <input type="radio" class="btn-check" name="sortToggle" id="sortROI" autocomplete="off" onchange="setSortMode('roi')">
+                <label class="btn btn-sm btn-vintage fw-bold px-3" for="sortROI">Sort by: Highest ROI</label>
+              </div>
+            </div>
+          </div>
+          <small class="mt-3 mt-lg-0" style="color: var(--olive-dark); font-weight: 700; opacity: 0.8;">⭐ = Beat the Market</small>
+        </div>
+
+        <div class="vintage-card p-0 overflow-hidden mb-5">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th class="text-center">Rank</th>
+                  <th>Investor Name</th>
+                  <th>Period</th>
+                  <th>Portfolio Value / ROI</th>
+                  <th>Primary Asset</th>
+                  <th>Date Recorded</th>
+                </tr>
+              </thead>
+              <tbody id="leaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== GAME ANALYTICS TAB ===================== -->
+      <div id="gameView" style="display: none;">
+
+        <div class="vintage-card p-4 mb-4">
+          <div class="row text-center px-2 align-items-center">
+            <div class="col-md-4 mb-2 mb-md-0">
+              <div class="stat-box py-4">
+                <span class="tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="The percentage of all students who beat the computer's portfolio.">
+                  <span style="color: rgba(244, 241, 234, 0.7); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Overall '26 Win Rate</span>
+                </span>
+                <span id="gameStatWinRate" class="game-stat mt-1 d-block">--</span>
+              </div>
+            </div>
+
+            <div class="col-md-4 mb-2 mb-md-0">
+              <div class="stat-box">
+                <span style="color: rgba(244, 241, 234, 0.7); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 10px;">
+                  Overall Leaderboard
+                </span>
+                <div id="gameStatOverall" class="overall-list">--</div>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <div class="stat-box py-4">
+                <span class="tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="The biggest dollar difference between the highest and lowest performing students inside a single game.">
+                  <span style="color: rgba(244, 241, 234, 0.7); font-size: 0.75rem; text-transform: uppercase; font-weight: bold; letter-spacing: 1px;">Largest Wealth Gap</span>
+                </span>
+                <span id="gameStatGap" class="game-stat currency mt-1 d-block">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROI Distribution Chart -->
+        <div class="chart-card">
+          <div class="chart-title">📊 ROI Distribution — All Students</div>
+          <div id="roiChartWrap">
+            <canvas id="roiChart" height="120"></canvas>
+          </div>
+        </div>
+
+        <!-- Beat the Market Trend Chart -->
+        <div class="chart-card">
+          <div class="chart-title">📈 Beat the Market % — By Year Cohort</div>
+          <div id="btmChartWrap">
+            <canvas id="btmChart" height="120"></canvas>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-end mb-3 px-1">
+          <h5 class="mb-0 text-uppercase fw-bold" style="color: var(--olive-dark); font-family: 'Playfair Display', serif;">Ranked by Average Game ROI</h5>
+        </div>
+
+        <div class="vintage-card p-0 overflow-hidden mb-5">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th class="text-center">Rank</th>
+                  <th>Game</th>
+                  <th>Date</th>
+                  <th>Players</th>
+                  <th>
+                    <span class="tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="The percentage of students in this game who beat the computer.">
+                      Win Rate
+                    </span>
+                  </th>
+                  <th>
+                    <span class="tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="The average Return on Investment across all players in this game.">
+                      Avg Game ROI
+                    </span>
+                  </th>
+                  <th>
+                    <span class="tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="The dollar difference between the highest and lowest portfolio values in this game.">
+                      Wealth Gap
+                    </span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody id="gameLeaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===================== TEAM SCORES TAB ===================== -->
+      <div id="teamView" style="display: none;">
+
+        <div class="vintage-card p-4 mb-4">
+          <div class="row align-items-center justify-content-center">
+            <div class="col-md-6 text-center">
+              <label for="gameFilter" class="form-label fw-bold text-uppercase" style="color: var(--cream);">Select Game to View Teams</label>
+              <select id="gameFilter" class="form-select custom-input text-center" onchange="renderTeamView()"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-end mb-3 px-1">
+          <h5 class="mb-0 text-uppercase fw-bold" style="color: var(--olive-dark); font-family: 'Playfair Display', serif;">Team Rankings</h5>
+          <small style="color: var(--olive-dark); font-weight: 700; opacity: 0.8;">Ranked by Average Portfolio Value</small>
+        </div>
+
+        <div class="vintage-card p-0 overflow-hidden mb-5">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th class="text-center">Rank</th>
+                  <th>Team Name</th>
+                  <th>Team Members</th>
+                  <th>Average Portfolio Value</th>
+                </tr>
+              </thead>
+              <tbody id="teamLeaderboardBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center">
+        <p class="footer-note">
+          If you believe any data to be incorrect, please email Coach Weaver a screenshot and description of the necessary correction.
+        </p>
+      </div>
+
+    </div><!-- /container -->
+
+
+    <!-- ===================== PLAYER MODAL ===================== -->
+    <div class="modal fade modal-flip" id="playerModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-uppercase" id="modalName" style="letter-spacing: 1px;">Player Name</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="filter: invert(1) grayscale(100%) brightness(200%);"></button>
+          </div>
+          <div class="modal-body p-4">
+
+            <div class="row">
+              <div class="col-6">
+                <div class="detail-label">Portfolio Value</div>
+                <div class="detail-value currency" id="modalPortfolio" style="text-shadow: none;"></div>
+              </div>
+              <div class="col-6">
+                <div class="detail-label">Total Invested</div>
+                <div class="detail-value currency" id="modalInvested" style="text-shadow: none;"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-6">
+                <div class="detail-label">Expenses from Life Events</div>
+                <div class="detail-value currency" id="modalExpenses" style="text-shadow: none;"></div>
+              </div>
+              <div class="col-6">
+                <div class="detail-label">Total Return</div>
+                <div class="detail-value currency" id="modalTotalReturn" style="text-shadow: none;"></div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-6">
+                <div class="detail-label">Student ROI</div>
+                <div class="detail-value fw-bold" id="modalROI" style="color: #27ae60;"></div>
+              </div>
+              <div class="col-6">
+                <div class="detail-label tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Compound Annual Growth Rate: The average yearly growth rate over the 20-year simulation.">Student CAGR (20 Yrs)</div>
+                <div class="detail-value fw-bold" id="modalStCAGR" style="color: #27ae60;"></div>
+              </div>
+            </div>
+
+            <hr id="modalCompDivider" style="border-color: rgba(35, 46, 31, 0.2); margin: 5px 0 15px 0;">
+
+            <div class="row" id="modalCompRow">
+              <div class="col-6">
+                <div class="detail-label">Computer's Portfolio</div>
+                <div class="detail-value currency" id="modalComputer" style="text-shadow: none; font-size: 1rem;"></div>
+              </div>
+              <div class="col-6">
+                <div class="detail-label">Computer CAGR</div>
+                <div class="detail-value fw-bold" id="modalCompCAGR" style="font-size: 1rem;"></div>
+              </div>
+            </div>
+
+            <div class="row" id="modalMarginRow">
+              <div class="col-12">
+                <div class="detail-label tooltip-header" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="How many more (or fewer) dollars you made compared to the computer.">Margin vs. Computer</div>
+                <div class="detail-value currency fw-bold" id="modalMargin" style="text-shadow: none; font-size: 1.3rem;"></div>
+              </div>
+            </div>
+
+            <hr style="border-color: rgba(35, 46, 31, 0.2); margin: 5px 0 15px 0;">
+
+            <div class="row">
+              <div class="col-6">
+                <div class="detail-label">Highest Performer</div>
+                <div class="detail-value text-uppercase" id="modalHigh"></div>
+              </div>
+              <div class="col-6">
+                <div class="detail-label">Lowest Performer</div>
+                <div class="detail-value text-uppercase" id="modalLow"></div>
+              </div>
+            </div>
+
+            <div class="row mt-1">
+              <div class="col-12">
+                <div class="detail-label">Ledger Period</div>
+                <div class="detail-value" id="modalClass" style="margin-bottom: 0;"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== GAME / LIST MODAL ===================== -->
+    <div class="modal fade modal-zoom" id="listModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-uppercase" id="listModalTitle" style="letter-spacing: 1px;">Roster</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="filter: invert(1) grayscale(100%) brightness(200%);"></button>
+          </div>
+          <div class="modal-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Player Name</th>
+                    <th>Portfolio Value</th>
+                    <th>Top Asset</th>
+                  </tr>
+                </thead>
+                <tbody id="listModalBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== TEAM DETAIL MODAL ===================== -->
+    <div class="modal fade modal-slide-right" id="teamModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-uppercase" id="teamModalTitle" style="letter-spacing: 1px;">Team Roster</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" style="filter: invert(1) grayscale(100%) brightness(200%);"></button>
+          </div>
+          <div class="modal-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead>
+                  <tr>
+                    <th>Player Name</th>
+                    <th>Portfolio Value</th>
+                    <th>Top Asset</th>
+                  </tr>
+                </thead>
+                <tbody id="teamModalBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts — order matters -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+
+  </body>
+</html>
