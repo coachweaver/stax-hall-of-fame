@@ -4,7 +4,7 @@
 //  After deploying Code.gs as a Web App, paste your
 //  Web App URL below, replacing the placeholder text.
 //
-//  Where to find it:
+//  Where to find it: 
 //    Apps Script → Deploy → Manage Deployments
 //    → copy the URL next to "Web app"
 //
