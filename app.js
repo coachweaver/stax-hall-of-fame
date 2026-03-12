@@ -13,25 +13,13 @@ let customViewsData   = [];
 let uniqueGamesGlobal = [];
 let currentSortMode   = 'networth';
 let roiChartInstance  = null;
-let btmChartInstance  = null;
-let dedupEnabled      = true; // default: best score only per student
+let dedupEnabled      = true;
 
-const COMP_INV = 214657.66;
-
-// Sentinel value for "Best of 2026 Season" team view
+const COMP_INV            = 214657.66;
 const BEST_2026_SENTINEL  = 'BEST_OF_2026_SEASON';
 const BEST_2026_START     = new Date('2026-01-01T00:00:00');
 const BEST_2026_END       = new Date('2026-06-01T23:59:59');
-
-// BTM chart: only these three 2026 classes (all screen sizes)
-const BTM_2026_CLASSES = [
-  '1a pf 2025-26 (weaver)',
-  '2a pf 2025-26 (weaver)',
-  '4b pf 2025-26 (weaver)'
-];
-
-// Game Analytics table: only 2026 school year
-const GAME_2026_KEYWORD = '2025-26';
+const GAME_2026_KEYWORD   = '2025-26';
 
 const ROI_BRACKETS = [
   { label: 'Lost Money', min: -Infinity, max: 0   },
@@ -113,50 +101,13 @@ window.addEventListener('DOMContentLoaded', function () {
 
 
 // ============================================================
-//  Inject CSS — no index.html edits needed
+//  Inject CSS
 // ============================================================
 function injectStyles() {
   var style = document.createElement('style');
   style.textContent = [
-    // --- Wealth gap / large number overflow fix on mobile ---
-    '@media (max-width: 767px) {',
-    '  .game-stat { font-size: clamp(1.3rem, 5.5vw, 3rem) !important; word-break: break-word; }',
 
-    // --- Stacked mobile table layout ---
-    '  table.mobile-stack thead { display: none; }',
-    '  table.mobile-stack tbody tr {',
-    '    display: block;',
-    '    margin-bottom: 12px;',
-    '    border: 1px solid rgba(212,175,55,0.25);',
-    '    border-radius: 4px;',
-    '    overflow: hidden;',
-    '  }',
-    '  table.mobile-stack tbody td {',
-    '    display: flex !important;',
-    '    justify-content: space-between;',
-    '    align-items: center;',
-    '    padding: 10px 14px !important;',
-    '    border-bottom: 1px solid rgba(212,175,55,0.12) !important;',
-    '    transform: none !important;',
-    '    text-align: right;',
-    '  }',
-    '  table.mobile-stack tbody td:last-child { border-bottom: none !important; }',
-    '  table.mobile-stack tbody td::before {',
-    '    content: attr(data-label);',
-    '    font-size: 0.65rem;',
-    '    text-transform: uppercase;',
-    '    letter-spacing: 1px;',
-    '    font-weight: 700;',
-    '    color: rgba(212,175,55,0.7);',
-    '    margin-right: 12px;',
-    '    flex-shrink: 0;',
-    '    text-align: left;',
-    '  }',
-    // Disable row scale transform on mobile (breaks stacked layout)
-    '  .table-hover tbody tr:hover td { transform: none !important; }',
-    '}',
-
-    // --- Dedup toggle styling (all screen sizes) ---
+    // ---- Dedup toggle (all screen sizes) ----
     '.dedup-toggle-wrap {',
     '  display: flex;',
     '  align-items: center;',
@@ -176,7 +127,131 @@ function injectStyles() {
     '  margin: 0;',
     '  white-space: nowrap;',
     '}',
-    '.form-check-input:checked { background-color: var(--gold) !important; border-color: var(--gold-dark) !important; }'
+    '.form-check-input:checked {',
+    '  background-color: var(--gold) !important;',
+    '  border-color: var(--gold-dark) !important;',
+    '}',
+
+    // ---- Overall leaderboard: 2026 stacked centered ----
+    '.overall-entry {',
+    '  display: flex;',
+    '  flex-direction: column;',
+    '  align-items: center;',
+    '  justify-content: center;',
+    '  padding: 4px 0;',
+    '  text-align: center;',
+    '}',
+    '.overall-entry .entry-name {',
+    '  font-size: 1rem;',
+    '  font-weight: 700;',
+    '  color: var(--cream);',
+    '  white-space: nowrap;',
+    '  overflow: hidden;',
+    '  text-overflow: ellipsis;',
+    '  max-width: 100%;',
+    '}',
+    '.overall-entry .entry-value {',
+    '  font-family: monospace;',
+    '  font-size: 0.95rem;',
+    '  font-weight: 700;',
+    '  color: var(--gold);',
+    '  margin-top: 1px;',
+    '}',
+
+    // ---- Mobile: investor leaderboard 2-line layout ----
+    '@media (max-width: 767px) {',
+
+    // Wealth gap overflow fix
+    '  .game-stat {',
+    '    font-size: clamp(1.3rem, 5.5vw, 3rem) !important;',
+    '    word-break: break-word;',
+    '  }',
+
+    // Hide columns on mobile: Top Asset (col 5), Date (col 6)
+    '  #leaderboardBody tr td:nth-child(5),',
+    '  #leaderboardBody tr td:nth-child(6),',
+    '  #leaderboard-table thead th:nth-child(5),',
+    '  #leaderboard-table thead th:nth-child(6) {',
+    '    display: none !important;',
+    '  }',
+
+    // Mobile investor row: 2-line structure
+    // Row cells use flex so name+period sit on line 1, portfolio on line 2
+    '  #leaderboardBody tr {',
+    '    display: grid;',
+    '    grid-template-columns: 48px 1fr auto;',
+    '    grid-template-rows: auto auto;',
+    '    padding: 10px 0;',
+    '    border-bottom: 1px solid rgba(212,175,55,0.2);',
+    '    cursor: pointer;',
+    '  }',
+    '  #leaderboardBody tr:hover { background: var(--olive-dark); }',
+    '  #leaderboardBody tr td {',
+    '    display: block !important;',
+    '    border: none !important;',
+    '    padding: 2px 8px !important;',
+    '    transform: none !important;',
+    '    vertical-align: middle;',
+    '  }',
+    // Rank: col 1, spans both rows
+    '  #leaderboardBody tr td:nth-child(1) {',
+    '    grid-column: 1;',
+    '    grid-row: 1 / 3;',
+    '    display: flex !important;',
+    '    align-items: center;',
+    '    justify-content: center;',
+    '    font-size: 1.2rem;',
+    '  }',
+    // Investor name: col 2, row 1
+    '  #leaderboardBody tr td:nth-child(2) {',
+    '    grid-column: 2;',
+    '    grid-row: 1;',
+    '    font-size: 0.9rem;',
+    '    white-space: nowrap;',
+    '    overflow: hidden;',
+    '    text-overflow: ellipsis;',
+    '  }',
+    // Period: col 3, row 1
+    '  #leaderboardBody tr td:nth-child(3) {',
+    '    grid-column: 3;',
+    '    grid-row: 1;',
+    '    font-size: 0.75rem;',
+    '    color: rgba(244,241,234,0.6);',
+    '    white-space: nowrap;',
+    '    text-align: right;',
+    '  }',
+    // Portfolio value: spans cols 2-3, row 2. Hide ROI small text.
+    '  #leaderboardBody tr td:nth-child(4) {',
+    '    grid-column: 2 / 4;',
+    '    grid-row: 2;',
+    '    font-size: 1rem;',
+    '  }',
+    '  #leaderboardBody tr td:nth-child(4) small {',
+    '    display: none !important;',
+    '  }',
+    '  #leaderboardBody tr td:nth-child(4) .currency {',
+    '    font-size: 1rem;',
+    '  }',
+
+    // Disable default hover transform on mobile
+    '  .table-hover tbody tr:hover td { transform: none !important; }',
+
+    // ---- Mobile: game leaderboard — hide Wealth Gap col ----
+    '  #gameLeaderboardBody tr td:nth-child(7),',
+    '  #game-table thead th:nth-child(7) {',
+    '    display: none !important;',
+    '  }',
+
+    // ---- Mobile: team table — only Rank + Team Name ----
+    '  #teamLeaderboardBody tr td:nth-child(3),',
+    '  #teamLeaderboardBody tr td:nth-child(4),',
+    '  #team-table thead th:nth-child(3),',
+    '  #team-table thead th:nth-child(4) {',
+    '    display: none !important;',
+    '  }',
+    '  #teamLeaderboardBody tr td:nth-child(2) { font-size: 1rem; }',
+
+    '}'  // end @media
   ].join('\n');
 
   document.head.appendChild(style);
@@ -217,7 +292,7 @@ function parseSheetData(rows) {
     var fName = get(fIdx);
     var lName = get(lIdx);
     if (!fName) continue;
-    var pVal  = get(pIdx);
+    var pVal = get(pIdx);
     if (!pVal) continue;
 
     var rawClass    = cIdx > -1 ? String(row[cIdx] || 'Unknown').trim() : 'Unknown';
@@ -237,7 +312,6 @@ function parseSheetData(rows) {
       beatMarket:             bmIdx   > -1 ? get(bmIdx)   : 'No',
       computerNetWorth:       cnIdx   > -1 ? get(cnIdx)   : 'N/A',
       teamName:               teamIdx > -1 ? get(teamIdx) : 'No Team'
-      // email intentionally omitted
     });
   }
   return records;
@@ -346,15 +420,20 @@ function initializeDashboard(records) {
       : 'none';
   });
 
-  // Add mobile-stack class to data tables
-  var tableTargets = ['leaderboardBody', 'gameLeaderboardBody', 'teamLeaderboardBody'];
-  tableTargets.forEach(function (id) {
-    var el = document.getElementById(id);
-    if (el) {
-      var tbl = el.closest('table');
-      if (tbl) tbl.classList.add('mobile-stack');
-    }
-  });
+  // Add IDs to tables for CSS targeting
+  var leaderTbl = document.querySelector('#leaderboardBody')        ? document.querySelector('#leaderboardBody').closest('table')        : null;
+  var gameTbl   = document.querySelector('#gameLeaderboardBody')    ? document.querySelector('#gameLeaderboardBody').closest('table')    : null;
+  var teamTbl   = document.querySelector('#teamLeaderboardBody')    ? document.querySelector('#teamLeaderboardBody').closest('table')    : null;
+  if (leaderTbl) leaderTbl.id = 'leaderboard-table';
+  if (gameTbl)   gameTbl.id   = 'game-table';
+  if (teamTbl)   teamTbl.id   = 'team-table';
+
+  // Hide BTM chart card entirely (removed feature)
+  var btmCard = document.getElementById('btmChartWrap');
+  if (btmCard) {
+    var parentCard = btmCard.closest('.chart-card');
+    if (parentCard) parentCard.style.display = 'none';
+  }
 
   populateDropdowns();
   injectDedupToggle();
@@ -362,7 +441,6 @@ function initializeDashboard(records) {
   renderGameView();
   renderTeamView();
 
-  // Bootstrap tooltips
   document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
     new bootstrap.Tooltip(el);
   });
@@ -370,12 +448,13 @@ function initializeDashboard(records) {
 
 
 // ============================================================
-//  Dedup Toggle — injected into the investors sort bar
+//  Dedup Toggle — both mobile and desktop
 // ============================================================
 function injectDedupToggle() {
-  // Find the sort bar row in indivView
+  if (document.getElementById('dedupToggle')) return;
+
   var sortBar = document.querySelector('#indivView .d-flex.flex-column.flex-lg-row');
-  if (!sortBar || document.getElementById('dedupToggle')) return; // already injected
+  if (!sortBar) return;
 
   var wrap = document.createElement('div');
   wrap.className = 'dedup-toggle-wrap mt-3 mt-lg-0';
@@ -394,15 +473,13 @@ function injectDedupToggle() {
 
 
 // ============================================================
-//  Deduplication — one entry per student, highest portfolio
+//  Deduplication — highest portfolio per student
 // ============================================================
 function deduplicateRecords(records) {
   var best = {};
   records.forEach(function (r) {
     var key = r.fullName.trim().toLowerCase();
-    if (!best[key] || r.numericValue > best[key].numericValue) {
-      best[key] = r;
-    }
+    if (!best[key] || r.numericValue > best[key].numericValue) best[key] = r;
   });
   return Object.values(best);
 }
@@ -429,7 +506,6 @@ function switchTab(tab) {
 //  Populate Dropdowns
 // ============================================================
 function populateDropdowns() {
-  // --- Investors dropdown ---
   var selectIndiv = document.getElementById('classFilter');
   if (selectIndiv) {
     selectIndiv.innerHTML = '';
@@ -443,7 +519,7 @@ function populateDropdowns() {
       'BEST OF 2023', '2023 2A', '2023 4B'
     ];
     exactOrder.forEach(function (viewName) {
-      var opt     = document.createElement('option');
+      var opt      = document.createElement('option');
       var isCustom = CUSTOM_VIEWS.some(function (v) { return v.name === viewName; });
       if (viewName === 'ALL TIME RECORDS') {
         opt.value = 'ALL TIME'; opt.textContent = '🏆 ALL TIME RECORDS';
@@ -455,7 +531,6 @@ function populateDropdowns() {
     });
   }
 
-  // --- Team / Game dropdown ---
   var validGameSet = new Set();
   allData.forEach(function (r) {
     if (r.teamMatchKey !== 'none' && r.timestamp) {
@@ -474,24 +549,16 @@ function populateDropdowns() {
   var selectGame = document.getElementById('gameFilter');
   if (selectGame) {
     selectGame.innerHTML = '';
-
-    // "Best of 2026 Season" at the top
     var bestOpt = document.createElement('option');
     bestOpt.value       = BEST_2026_SENTINEL;
     bestOpt.textContent = '⭐ BEST OF 2026 (Season)';
     selectGame.appendChild(bestOpt);
 
-    if (uniqueGamesGlobal.length === 0) {
-      var emptyOpt = document.createElement('option');
-      emptyOpt.textContent = 'No individual team games found';
-      selectGame.appendChild(emptyOpt);
-    } else {
-      uniqueGamesGlobal.forEach(function (g) {
-        var opt = document.createElement('option');
-        opt.value = g; opt.textContent = g;
-        selectGame.appendChild(opt);
-      });
-    }
+    uniqueGamesGlobal.forEach(function (g) {
+      var opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      selectGame.appendChild(opt);
+    });
   }
 }
 
@@ -527,7 +594,7 @@ function setSortMode(mode) {
 
 
 // ============================================================
-//  Filter Records for Investor Dropdown
+//  Filter Records
 // ============================================================
 function getFilteredRecords(filterValue) {
   var fv = String(filterValue || '').trim();
@@ -575,11 +642,7 @@ function updateLeaderboard() {
   var searchTerm  = searchEl ? searchEl.value.trim().toLowerCase() : '';
 
   var filtered = getFilteredRecords(filterValue);
-
-  // Apply dedup before search so search works on the deduped set
-  if (dedupEnabled) {
-    filtered = deduplicateRecords(filtered);
-  }
+  if (dedupEnabled) filtered = deduplicateRecords(filtered);
 
   if (searchTerm) {
     filtered = filtered.filter(function (r) {
@@ -615,12 +678,19 @@ function updateLeaderboard() {
     var idxJson    = escHtml(JSON.stringify(allDataIndexes));
 
     html += '<tr class="animated-row" style="animation-delay:' + delay + 'ms" onclick="openPlayerModal(' + idx + ',' + idxJson + ')">';
-    html += '<td data-label="Rank" class="rank-col">' + medal + '</td>';
-    html += '<td data-label="Investor"><strong>' + escHtml(row.fullName) + '</strong>' + star + '</td>';
-    html += '<td data-label="Period">' + escHtml(row.classPeriod) + '</td>';
-    html += '<td data-label="Portfolio / ROI"><span class="currency">' + formatCurrency(row.numericValue) + '</span><br><small style="color:' + roiColor + ';font-weight:700;">' + row.roi.toFixed(1) + '% ROI</small></td>';
-    html += '<td data-label="Top Asset"><span class="badge ' + badgeClass + '">' + escHtml(assetLabel) + '</span></td>';
-    html += '<td data-label="Date"><small>' + formatDate(row.timestamp) + '</small></td>';
+    // col 1: rank
+    html += '<td class="rank-col">' + medal + '</td>';
+    // col 2: name
+    html += '<td><strong>' + escHtml(row.fullName) + '</strong>' + star + '</td>';
+    // col 3: period
+    html += '<td>' + escHtml(row.classPeriod) + '</td>';
+    // col 4: portfolio + ROI (ROI hidden on mobile via CSS)
+    html += '<td><span class="currency">' + formatCurrency(row.numericValue) + '</span>'
+          + '<br><small style="color:' + roiColor + ';font-weight:700;">' + row.roi.toFixed(1) + '% ROI</small></td>';
+    // col 5: top asset (hidden on mobile)
+    html += '<td><span class="badge ' + badgeClass + '">' + escHtml(assetLabel) + '</span></td>';
+    // col 6: date (hidden on mobile)
+    html += '<td><small>' + formatDate(row.timestamp) + '</small></td>';
     html += '</tr>';
   });
 
@@ -712,11 +782,11 @@ function renderGameView() {
   renderGlobalStats();
   renderGameLeaderboard();
   renderROIChart();
-  renderBTMChart();
 }
 
+// ---- Global Stats ----
 function renderGlobalStats() {
-  // Win rate — 2026 cohort only
+  // Win rate — 2026 only
   var cohort2026 = allData.filter(function (r) {
     return String(r.rawClassPeriod || '').toLowerCase().includes('2025-26');
   });
@@ -730,8 +800,13 @@ function renderGlobalStats() {
     }
   }
 
-  // Overall top 3 — all time
-  var sorted    = allData.slice().sort(function (a, b) { return b.numericValue - a.numericValue; });
+  // Overall leaderboard: 2026 only, stacked centered layout
+  var data2026  = allData.filter(function (r) {
+    return String(r.rawClassPeriod || '').toLowerCase().includes('2025-26');
+  });
+  var sorted    = (dedupEnabled ? deduplicateRecords(data2026) : data2026.slice())
+    .sort(function (a, b) { return b.numericValue - a.numericValue; });
+
   var overallEl = document.getElementById('gameStatOverall');
   if (overallEl) {
     if (sorted.length === 0) {
@@ -740,17 +815,24 @@ function renderGlobalStats() {
       var medals = ['🥇', '🥈', '🥉'];
       var html   = '';
       sorted.slice(0, 3).forEach(function (r, i) {
-        html += '<div>' + medals[i] + ' ' + escHtml(r.fullName) + ' — <span class="currency" style="font-size:1rem;">' + formatCurrency(r.numericValue) + '</span></div>';
+        html += '<div class="overall-entry">'
+              + '<div class="entry-name">' + medals[i] + ' ' + escHtml(r.fullName) + '</div>'
+              + '<div class="entry-value">' + formatCurrency(r.numericValue) + '</div>'
+              + '</div>';
       });
       overallEl.innerHTML = html;
+
+      // Override the overall-list text-align for this centered layout
+      overallEl.style.textAlign  = 'center';
+      overallEl.style.width      = '100%';
     }
   }
 
-  // Largest wealth gap — all time, within a single class period
-  var gapEl   = document.getElementById('gameStatGap');
+  // Largest wealth gap — all time
+  var gapEl = document.getElementById('gameStatGap');
   if (gapEl) {
-    var maxGap  = 0;
-    var pm      = {};
+    var maxGap = 0;
+    var pm     = {};
     allData.forEach(function (r) {
       if (!pm[r.classPeriod]) pm[r.classPeriod] = [];
       pm[r.classPeriod].push(r.numericValue);
@@ -766,7 +848,6 @@ function renderGlobalStats() {
 
 // ---- Game leaderboard: 2026 only ----
 function renderGameLeaderboard() {
-  // Filter to 2026 school year classes only
   var data2026 = allData.filter(function (r) {
     return String(r.rawClassPeriod || '').toLowerCase().includes(GAME_2026_KEYWORD);
   });
@@ -808,13 +889,13 @@ function renderGameLeaderboard() {
     var roiColor = g.avgROI  >= 0  ? '#2ecc71' : '#e74c3c';
     var winColor = g.winRate >= 50 ? '#2ecc71' : '#e74c3c';
     html += '<tr onclick="openGameModal(\'' + escHtml(g.period) + '\')">';
-    html += '<td data-label="Rank" class="rank-col">' + medal + '</td>';
-    html += '<td data-label="Game"><strong>' + escHtml(g.period) + '</strong></td>';
-    html += '<td data-label="Date"><small>' + escHtml(g.dateStr) + '</small></td>';
-    html += '<td data-label="Players">' + g.players + '</td>';
-    html += '<td data-label="Win Rate" style="color:' + winColor + ';font-weight:700;">' + g.winRate.toFixed(1) + '%</td>';
-    html += '<td data-label="Avg ROI" style="color:' + roiColor + ';font-weight:700;">' + g.avgROI.toFixed(1) + '%</td>';
-    html += '<td data-label="Wealth Gap" class="currency">' + formatCurrency(g.gap) + '</td>';
+    html += '<td class="rank-col">' + medal + '</td>';
+    html += '<td><strong>' + escHtml(g.period) + '</strong></td>';
+    html += '<td><small>' + escHtml(g.dateStr) + '</small></td>';
+    html += '<td>' + g.players + '</td>';
+    html += '<td style="color:' + winColor + ';font-weight:700;">' + g.winRate.toFixed(1) + '%</td>';
+    html += '<td style="color:' + roiColor + ';font-weight:700;">' + g.avgROI.toFixed(1) + '%</td>';
+    html += '<td class="currency">' + formatCurrency(g.gap) + '</td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
@@ -822,7 +903,7 @@ function renderGameLeaderboard() {
 
 
 // ============================================================
-//  ROI Distribution Chart — all time
+//  ROI Distribution Chart
 // ============================================================
 function renderROIChart() {
   var canvas = document.getElementById('roiChart');
@@ -840,7 +921,10 @@ function renderROIChart() {
     }
   });
 
-  if (valid === 0) { wrap.innerHTML = '<div class="chart-empty">Not enough data to display this chart.</div>'; return; }
+  if (valid === 0) {
+    wrap.innerHTML = '<div class="chart-empty">Not enough data to display this chart.</div>';
+    return;
+  }
 
   if (roiChartInstance) { roiChartInstance.destroy(); roiChartInstance = null; }
 
@@ -877,63 +961,7 @@ function renderROIChart() {
 
 
 // ============================================================
-//  Beat the Market Chart — 2026 only, 1A / 2A / 4B (Weaver)
-// ============================================================
-function renderBTMChart() {
-  var canvas = document.getElementById('btmChart');
-  var wrap   = document.getElementById('btmChartWrap');
-  if (!canvas || !wrap) return;
-
-  var players = allData.filter(function (r) {
-    return BTM_2026_CLASSES.includes(String(r.rawClassPeriod || '').toLowerCase());
-  });
-
-  if (players.length === 0) {
-    wrap.innerHTML = '<div class="chart-empty">No 2026 data found for Periods 1A, 2A & 4B.</div>';
-    return;
-  }
-
-  var winners  = players.filter(function (r) { return r.beatMarketBool; }).length;
-  var winRate  = parseFloat(((winners / players.length) * 100).toFixed(1));
-  var barColor = winRate >= 50 ? 'rgba(46,204,113,0.75)' : 'rgba(212,175,55,0.75)';
-  var barBorder= winRate >= 50 ? '#27ae60' : '#a88a2c';
-
-  if (btmChartInstance) { btmChartInstance.destroy(); btmChartInstance = null; }
-
-  btmChartInstance = new Chart(canvas, {
-    type: 'bar',
-    data: {
-      labels: ['2026 — Periods 1A, 2A & 4B'],
-      datasets: [{
-        label: 'Beat the Market %',
-        data: [winRate],
-        backgroundColor: [barColor],
-        borderColor:     [barBorder],
-        borderWidth: 2, borderRadius: 3
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: function (ctx) {
-          return ctx.parsed.y + '% of students beat the market ('
-            + winners + ' of ' + players.length + ')';
-        }}}
-      },
-      scales: {
-        x: { ticks: { color: '#f4f1ea', font: { family: 'Montserrat', weight: '600' } }, grid: { color: 'rgba(212,175,55,0.15)' } },
-        y: { beginAtZero: true, max: 100,
-          ticks: { color: '#f4f1ea', font: { family: 'Montserrat' }, callback: function (v) { return v + '%'; } },
-          grid: { color: 'rgba(212,175,55,0.15)' } }
-      }
-    }
-  });
-}
-
-
-// ============================================================
-//  Game Modal (roster for a class period)
+//  Game Modal
 // ============================================================
 function openGameModal(period) {
   var players = allData.filter(function (r) { return r.classPeriod === period; });
@@ -976,12 +1004,7 @@ function renderTeamView() {
   }
 
   var selectedGame = gameFilterEl.value;
-
-  // --- Best of 2026 Season aggregate ---
-  if (selectedGame === BEST_2026_SENTINEL) {
-    renderBestOf2026Teams();
-    return;
-  }
+  if (selectedGame === BEST_2026_SENTINEL) { renderBestOf2026Teams(); return; }
 
   if (!selectedGame || uniqueGamesGlobal.length === 0) {
     if (tbody) tbody.innerHTML = '<tr><td colspan="4" class="text-center" style="color:rgba(244,241,234,0.5);padding:30px;">No team data found.</td></tr>';
@@ -1002,11 +1025,8 @@ function renderTeamView() {
   renderTeamTable(gamePlayers, gamePeriod, gameDateStr);
 }
 
-// ---- Best of 2026 Season: aggregate all 2025-26 teams Jan 1 – Jun 1 2026 ----
 function renderBestOf2026Teams() {
   var tbody = document.getElementById('teamLeaderboardBody');
-
-  // Filter records: 2025-26 school year, within date range, has a team
   var seasonPlayers = allData.filter(function (r) {
     if (r.teamMatchKey === 'none') return false;
     if (!String(r.rawClassPeriod || '').toLowerCase().includes('2025-26')) return false;
@@ -1015,7 +1035,6 @@ function renderBestOf2026Teams() {
     return d >= BEST_2026_START && d <= BEST_2026_END;
   });
 
-  // Group by team name, then per team deduplicate by student (best score)
   var teamMap = {};
   seasonPlayers.forEach(function (r) {
     if (!teamMap[r.teamMatchKey]) teamMap[r.teamMatchKey] = { displayName: r.teamName.trim(), members: {} };
@@ -1050,16 +1069,15 @@ function renderBestOf2026Teams() {
       .map(function (r) { return escHtml(r.fullName); }).join(', ');
 
     html += '<tr onclick="openBestOf2026TeamModal(\'' + escHtml(team.displayName) + '\')">';
-    html += '<td data-label="Rank" class="rank-col">' + medal + '</td>';
-    html += '<td data-label="Team"><strong>' + escHtml(team.displayName) + '</strong></td>';
-    html += '<td data-label="Members"><small style="line-height:1.8;">' + memberNames + '</small></td>';
-    html += '<td data-label="Avg Portfolio"><span class="currency">' + formatCurrency(team.average) + '</span></td>';
+    html += '<td class="rank-col">' + medal + '</td>';
+    html += '<td><strong>' + escHtml(team.displayName) + '</strong></td>';
+    html += '<td><small style="line-height:1.8;">' + memberNames + '</small></td>';
+    html += '<td><span class="currency">' + formatCurrency(team.average) + '</span></td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
 }
 
-// ---- Single-game team table ----
 function renderTeamTable(gamePlayers, gamePeriod, gameDateStr) {
   var teamMap = {};
   gamePlayers.forEach(function (r) {
@@ -1093,10 +1111,10 @@ function renderTeamTable(gamePlayers, gamePeriod, gameDateStr) {
       .map(function (r) { return escHtml(r.fullName); }).join(', ');
 
     html += '<tr onclick="openTeamModal(\'' + escHtml(team.displayName) + '\',\'' + escHtml(gamePeriod) + '\',\'' + escHtml(gameDateStr) + '\')">';
-    html += '<td data-label="Rank" class="rank-col">' + medal + '</td>';
-    html += '<td data-label="Team"><strong>' + escHtml(team.displayName) + '</strong></td>';
-    html += '<td data-label="Members"><small style="line-height:1.8;">' + memberNames + '</small></td>';
-    html += '<td data-label="Avg Portfolio"><span class="currency">' + formatCurrency(team.average) + '</span></td>';
+    html += '<td class="rank-col">' + medal + '</td>';
+    html += '<td><strong>' + escHtml(team.displayName) + '</strong></td>';
+    html += '<td><small style="line-height:1.8;">' + memberNames + '</small></td>';
+    html += '<td><span class="currency">' + formatCurrency(team.average) + '</span></td>';
     html += '</tr>';
   });
   tbody.innerHTML = html;
@@ -1104,7 +1122,7 @@ function renderTeamTable(gamePlayers, gamePeriod, gameDateStr) {
 
 
 // ============================================================
-//  Team Modal — single game
+//  Team Modals
 // ============================================================
 function openTeamModal(teamName, period, gameDateStr) {
   var teamKey = teamName.trim().toLowerCase();
@@ -1118,13 +1136,8 @@ function openTeamModal(teamName, period, gameDateStr) {
   renderTeamModalBody(teamName, members);
 }
 
-// ============================================================
-//  Team Modal — Best of 2026 season
-// ============================================================
 function openBestOf2026TeamModal(teamName) {
   var teamKey = teamName.trim().toLowerCase();
-
-  // Get season players for this team, deduplicated by student
   var raw = allData.filter(function (r) {
     if (r.teamMatchKey !== teamKey) return false;
     if (!String(r.rawClassPeriod || '').toLowerCase().includes('2025-26')) return false;
@@ -1132,7 +1145,6 @@ function openBestOf2026TeamModal(teamName) {
     if (isNaN(d)) return false;
     return d >= BEST_2026_START && d <= BEST_2026_END;
   });
-
   var best = {};
   raw.forEach(function (r) {
     var key = r.fullName.trim().toLowerCase();
